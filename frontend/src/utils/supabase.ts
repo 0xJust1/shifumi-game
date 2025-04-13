@@ -149,6 +149,18 @@ export const updateGameResult = async (
   try {
     console.log(`Updating game result: ${result} for ${address}, netWin: ${netWin}`);
     
+    // Validate moves against the database constraint
+    const validMoves = ['rock', 'paper', 'scissors'];
+    
+    // Format moves to match expected values or set to null if invalid
+    const formattedPlayerMove = playerMove && validMoves.includes(playerMove.toLowerCase()) 
+      ? playerMove.toLowerCase() 
+      : null;
+      
+    const formattedAiMove = aiMove && validMoves.includes(aiMove.toLowerCase())
+      ? aiMove.toLowerCase()
+      : null;
+    
     // Get existing player stats
     const { data: existingStats, error: statsError } = await supabase
       .from('player_stats')
@@ -193,7 +205,7 @@ export const updateGameResult = async (
     
     totalGames += 1;
     
-    // Prepare data for update
+    // Prepare basic data for update (only known columns that should exist in all versions)
     const updateData: any = {
       address,
       wins,
@@ -205,51 +217,22 @@ export const updateGameResult = async (
       updated_at: new Date().toISOString()
     };
     
-    // Only add move data if provided
-    if (playerMove) {
-      updateData.last_move = playerMove;
+    // Only add move data if provided and valid
+    if (formattedPlayerMove) {
+      updateData.last_move = formattedPlayerMove;
     }
     
-    if (aiMove) {
-      updateData.last_opponent_move = aiMove;
+    if (formattedAiMove) {
+      updateData.last_opponent_move = formattedAiMove;
     }
     
     if (result) {
       updateData.last_result = result;
     }
     
-    // Try to update the advanced stats first
+    // Try direct upsert with only basic fields
     try {
-      // Try to update with all columns - this will fail if some columns don't exist
-      const advancedUpdateData = {
-        ...updateData,
-        level: existingStats?.level || 1,
-        xp: existingStats?.xp || 0,
-        current_streak: existingStats?.current_streak ? 
-          (result === 'win' ? (existingStats.current_streak + 1) : 
-          (result === 'lose' ? 0 : existingStats.current_streak)) : 0,
-        max_streak: existingStats?.max_streak || 0,
-        multiplier: existingStats?.multiplier || 1.0
-      };
-      
-      const { error: advancedError } = await supabase
-        .from('player_stats')
-        .upsert(advancedUpdateData, {
-          onConflict: 'address'
-        });
-        
-      // If there's an error, it might be due to missing columns
-      if (advancedError) {
-        console.warn('Error updating with advanced columns, trying basic update', advancedError);
-        // Fall through to basic update
-        throw advancedError;
-      } else {
-        // Advanced update succeeded
-        console.log('Successfully updated player stats with advanced columns');
-        return true;
-      }
-    } catch (advError) {
-      // Try basic update with only essential columns
+      console.log('Updating player stats with basic data:', updateData);
       const { error: basicError } = await supabase
         .from('player_stats')
         .upsert(updateData, {
@@ -258,11 +241,39 @@ export const updateGameResult = async (
         
       if (basicError) {
         console.error('Error updating player stats with basic columns:', basicError);
+        
+        // If there's still an error with validations, try an even simpler update without the move data
+        if (basicError.code === '23514') { // Constraint violation
+          console.log('Constraint violation detected, trying without move data');
+          
+          // Remove potentially problematic fields
+          delete updateData.last_move;
+          delete updateData.last_opponent_move;
+          delete updateData.last_result;
+          
+          const { error: minimalError } = await supabase
+            .from('player_stats')
+            .upsert(updateData, {
+              onConflict: 'address'
+            });
+            
+          if (minimalError) {
+            console.error('Error saving player stats to Supabase:', minimalError);
+            return false;
+          }
+          
+          console.log('Successfully updated player stats with minimal data');
+          return true;
+        }
+        
         return false;
       }
       
-      console.log('Successfully updated player stats with basic columns');
+      console.log('Successfully updated player stats');
       return true;
+    } catch (error) {
+      console.error('Error in updateGameResult:', error);
+      return false;
     }
   } catch (error) {
     console.error('Error in updateGameResult:', error);
