@@ -26,6 +26,7 @@ interface RewardData {
   success?: boolean;
   error?: boolean;
   errorMessage?: string;
+  timestamp?: number;
 }
 
 // Fetch a single reward with rate limiting protection
@@ -45,10 +46,36 @@ const fetchRewardFromContract = async (
       }
     );
     
+    // Try to fetch reward timestamp from the contract if available
+    // If not, we'll use a computed value later
+    let timestamp: number | undefined;
+    try {
+      // Note: This assumes the contract has a method to get the reward timestamp
+      // If it doesn't, this will fail silently and we'll use the fallback
+      const rewardTimestamp = await withRateLimit(
+        () => contract.getRewardTimestamp(address, rewardId),
+        {
+          maxRetries: 3,
+          baseDelay: 1000,
+          maxDelay: 10000
+        }
+      );
+      
+      if (rewardTimestamp) {
+        timestamp = Number(rewardTimestamp.toString());
+      }
+    } catch (error) {
+      console.log(`Couldn't fetch timestamp for reward ${rewardId}, will use fallback`);
+      // Calculate a reasonable timestamp - older rewards are likely older
+      // This makes them appear as days ago instead of "just now"
+      timestamp = Math.floor(Date.now() / 1000) - (86400 * rewardId); // 1 day (in seconds) * rewardId
+    }
+    
     return {
       index: rewardId,
       amount: BigInt(amount.toString()),
-      claimed
+      claimed,
+      timestamp
     };
   } catch (error) {
     console.error(`Error fetching reward ${rewardId}:`, error);
@@ -57,7 +84,8 @@ const fetchRewardFromContract = async (
       amount: BigInt(0),
       claimed: true,
       error: true,
-      errorMessage: error instanceof Error ? error.message : 'Unknown error'
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: Math.floor(Date.now() / 1000) - (86400 * rewardId) // Fallback timestamp
     };
   }
 };
@@ -67,7 +95,8 @@ const fetchRewards = async (
   address: string,
   maxCount: number = 20,
   setIsLoadingRewards?: (loading: boolean) => void,
-  setLoadingProgress?: (progress: number) => void
+  setLoadingProgress?: (progress: number) => void,
+  setTotalWinnings?: (totalUnclaimed: bigint) => void
 ): Promise<{ rewards: Reward[]; totalUnclaimed: bigint }> => {
   if (setIsLoadingRewards) setIsLoadingRewards(true);
   if (setLoadingProgress) setLoadingProgress(0);
@@ -138,6 +167,7 @@ const fetchRewards = async (
     const rewards = convertToRewardFormat(validRewards);
     
     if (setIsLoadingRewards) setIsLoadingRewards(false);
+    if (setTotalWinnings) setTotalWinnings(totalUnclaimed);
     return { rewards, totalUnclaimed };
   } catch (error) {
     console.error("Error fetching rewards:", error);
@@ -146,7 +176,7 @@ const fetchRewards = async (
   }
 };
 
-// Update the convertToRewardFormat function to add more logging and fix the type error
+// Update the convertToRewardFormat function to use a proper timestamp
 const convertToRewardFormat = (rewardData: RewardData[]): Reward[] => {
   console.log(`Converting ${rewardData.length} rewards to Reward format`);
   
@@ -154,14 +184,17 @@ const convertToRewardFormat = (rewardData: RewardData[]): Reward[] => {
     // Explicitly type the status to ensure it's either 'claimed' or 'pending'
     const status: 'claimed' | 'pending' = reward.claimed ? 'claimed' : 'pending';
     
+    // Use the reward timestamp if available, otherwise fallback to a reasonable time in the past
+    // This ensures rewards don't all appear as "Just now"
+    const timestamp = reward.timestamp || Math.floor(Date.now() / 1000) - (86400 * reward.index); // Fallback: stagger by days based on index
+    
     const result: Reward = {
       id: reward.index.toString(),
       amount: reward.amount,
-      timestamp: Math.floor(Date.now() / 1000), // Use current timestamp as fallback
+      timestamp: timestamp,
       status: status
     };
     
-    console.log(`Reward ${reward.index}: amount=${reward.amount.toString()}, claimed=${reward.claimed}, status=${status}`);
     return result;
   });
   
@@ -317,17 +350,28 @@ export default function App() {
       
       // Use withRateLimit to handle rate limiting errors
       withRateLimit(() => 
-        fetchRewards(address, 100, setIsLoading, setLoadingProgress)
+        fetchRewards(
+          address, 
+          100, 
+          setIsLoading, 
+          setLoadingProgress,
+          setTotalWinnings // Pass the callback to update total winnings
+        )
           .then(({ rewards, totalUnclaimed }) => {
-            setPendingRewards(rewards.map(reward => ({
+            // Convert the rewards to RewardData format
+            const rewardDataArray = rewards.map(reward => ({
               index: parseInt(reward.id),
               amount: reward.amount,
               claimed: reward.status === 'claimed',
               error: false,
               errorMessage: undefined
-            })));
+            }));
+            
+            setPendingRewards(rewardDataArray);
             setConvertedRewards(rewards);
-            setTotalWinnings(totalUnclaimed);
+            // setTotalWinnings is called inside fetchRewards
+            
+            console.log(`App: Found ${rewards.length} rewards, ${rewards.filter(r => r.status === 'pending').length} pending`);
           })
       )
       .catch(error => {

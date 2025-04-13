@@ -14,7 +14,7 @@ export const fetchRewards = async (
   setIsLoading: (loading: boolean) => void,
   setLoadingProgress: (progress: number) => void,
   setDbWinnings: (winnings: bigint) => void
-): Promise<Reward[]> => {
+): Promise<{ rewards: Reward[]; totalUnclaimed: bigint }> => {
   try {
     setIsLoading(true);
     setLoadingProgress(0);
@@ -52,31 +52,41 @@ export const fetchRewards = async (
          (error.message && error.message.includes('does not exist'))) {
         console.warn('Rewards table does not exist yet. Creating empty result.');
         setLoadingProgress(100);
-        return [];
+        return { rewards: [], totalUnclaimed: BigInt(0) };
       }
       
       throw error; // Rethrow other errors
     }
 
-    // Calculate total winnings from rewards
-    const totalWinnings = rewards.reduce((acc, reward) => {
-      return acc + BigInt(reward.amount);
+    const formattedRewards = rewards.map(reward => ({
+      id: reward.id,
+      amount: BigInt(reward.amount),
+      timestamp: reward.timestamp,
+      status: reward.status as 'pending' | 'claimed'
+    }));
+
+    // Calculate total winnings from all rewards
+    const totalWinnings = formattedRewards.reduce((acc, reward) => {
+      return acc + reward.amount;
     }, BigInt(0));
+
+    // Calculate total unclaimed (pending) rewards
+    const totalUnclaimed = formattedRewards
+      .filter(reward => reward.status === 'pending')
+      .reduce((acc, reward) => acc + reward.amount, BigInt(0));
+
+    console.log(`Fetched ${formattedRewards.length} rewards, ${formattedRewards.filter(r => r.status === 'pending').length} pending`);
+    console.log(`Total winnings: ${totalWinnings.toString()}, Unclaimed: ${totalUnclaimed.toString()}`);
 
     setDbWinnings(totalWinnings);
     setLoadingProgress(100);
 
-    return rewards.map(reward => ({
-      id: reward.id,
-      amount: BigInt(reward.amount),
-      timestamp: reward.timestamp,
-      status: reward.status
-    }));
+    return { rewards: formattedRewards, totalUnclaimed };
   } catch (error) {
     console.error('Error in fetchRewards:', error);
     // Don't throw, just return empty array
     setLoadingProgress(100);
-    return [];
+    return { rewards: [], totalUnclaimed: BigInt(0) };
   } finally {
     setIsLoading(false);
   }

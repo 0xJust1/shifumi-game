@@ -10,21 +10,44 @@ import { supabase } from '../utils/supabase';
 import { fetchRewards, Reward } from '../utils/rewards';
 import { withRateLimit } from '../utils/withRateLimit';
 
-// Utility function to format time ago
+// Improved utility function to format time ago with more granular time periods
 function formatTimeAgo(timestamp: number | null): string {
   if (timestamp === null) return 'Never played';
   
-  // Convert timestamp from seconds to milliseconds
   const now = Math.floor(Date.now() / 1000);
   const diff = now - timestamp;
   
+  // Handle invalid or future timestamps
+  if (diff < 0) return 'Just now'; // Future timestamps, shouldn't happen
+  
+  // More granular time periods
+  const seconds = diff;
   const minutes = Math.floor(diff / 60);
   const hours = Math.floor(minutes / 60);
   const days = Math.floor(hours / 24);
+  const weeks = Math.floor(days / 7);
+  const months = Math.floor(days / 30);
   
-  if (days > 0) return `${days}d ago`;
-  if (hours > 0) return `${hours}h ago`;
-  if (minutes > 0) return `${minutes}m ago`;
+  // Format the time difference
+  if (months > 0) {
+    return months === 1 ? '1 month ago' : `${months} months ago`;
+  }
+  if (weeks > 0) {
+    return weeks === 1 ? '1 week ago' : `${weeks} weeks ago`;
+  }
+  if (days > 0) {
+    return days === 1 ? '1 day ago' : `${days}d ago`;
+  }
+  if (hours > 0) {
+    return hours === 1 ? '1 hour ago' : `${hours}h ago`;
+  }
+  if (minutes > 0) {
+    return minutes === 1 ? '1 minute ago' : `${minutes}m ago`;
+  }
+  if (seconds > 30) {
+    return `${seconds}s ago`;
+  }
+  
   return 'Just now';
 }
 
@@ -237,10 +260,18 @@ export default function RewardsPanel({
   }, [pendingRewards, propTotalWinnings, dbWinnings]);
   
   // Filter unclaimed rewards
-  const unclaimedRewards = useMemo(() => 
-    pendingRewards.filter(reward => reward.status === 'pending'),
-    [pendingRewards]
-  );
+  const unclaimedRewards = useMemo(() => {
+    const unclaimed = pendingRewards.filter(reward => reward.status === 'pending');
+    console.log(`RewardsPanel: Found ${unclaimed.length} unclaimed rewards out of ${pendingRewards.length} total`);
+    
+    // Log each unclaimed reward for debugging
+    unclaimed.forEach((reward, index) => {
+      const formattedDate = new Date(reward.timestamp * 1000).toLocaleString();
+      console.log(`Unclaimed reward ${index}: id=${reward.id}, amount=${reward.amount.toString()}, timestamp=${reward.timestamp} (${formattedDate})`);
+    });
+    
+    return unclaimed;
+  }, [pendingRewards]);
 
   // Fetch pending rewards with rate limit protection
   useEffect(() => {
@@ -257,7 +288,7 @@ export default function RewardsPanel({
           lastFetchTimeRef.current = now;
           
           // Use the fetchRewards function with rate limiting protection
-          const rewards = await withRateLimit(
+          const { rewards } = await withRateLimit(
             () => fetchRewards(
               address,
               100,
@@ -268,7 +299,7 @@ export default function RewardsPanel({
             { maxRetries: 4, baseDelay: 1500, maxDelay: 8000 }
           );
           
-          console.log(`RewardsPanel: Fetched ${rewards.length} rewards`);
+          console.log(`RewardsPanel: Fetched ${rewards.length} rewards, ${rewards.filter(r => r.status === 'pending').length} pending`);
           setPendingRewards(rewards);
         } catch (error) {
           console.error('Error fetching rewards:', error);
@@ -592,7 +623,7 @@ export default function RewardsPanel({
                     <p className="font-medium">
                       {formatWinningsToMON(reward.amount, chainId)}
                     </p>
-                    <p className="text-sm text-gray-400">
+                    <p className="text-sm text-gray-400" title={new Date(reward.timestamp * 1000).toLocaleString()}>
                       Won {formatTimeAgo(reward.timestamp)}
                     </p>
                   </div>
