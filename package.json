@@ -1,0 +1,58 @@
+{
+  "name": "shifumi",
+  "version": "1.0.0",
+  "description": "A blockchain-based Rock Paper Scissors game with betting tiers",
+  "main": "index.js",
+  "scripts": {
+    "deploy:sepolia": "hardhat run scripts/deploy.js --network sepolia",
+    "deploy:mainnet": "hardhat run scripts/deploy.js --network mainnet",
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "frontend": "cd frontend && npm run dev",
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "ethereum",
+    "blockchain",
+    "game",
+    "rock-paper-scissors",
+    "solidity",
+    "hardhat",
+    "react"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-chai-matchers": "^1.0.6",
+    "@nomicfoundation/hardhat-network-helpers": "^1.0.12",
+    "@nomicfoundation/hardhat-toolbox": "^2.0.2",
+    "@nomiclabs/hardhat-ethers": "^2.2.3",
+    "@nomiclabs/hardhat-etherscan": "^3.1.7",
+    "@typechain/ethers-v5": "^10.2.1",
+    "@typechain/hardhat": "^6.1.6",
+    "@types/chai": "^4.3.20",
+    "@types/mocha": "^10.0.10",
+    "chai": "^4.5.0",
+    "dotenv": "^16.0.3",
+    "ethers": "^5.7.2",
+    "hardhat": "^2.22.19",
+    "hardhat-gas-reporter": "^1.0.10",
+    "solidity-coverage": "^0.8.14",
+    "ts-node": "^10.9.2",
+    "typechain": "^8.3.2",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@rainbow-me/rainbowkit": "^2.2.4",
+    "@supabase/supabase-js": "^2.49.4",
+    "@types/howler": "^2.2.12",
+    "framer-motion": "^12.6.5",
+    "howler": "^2.2.4",
+    "react-hot-toast": "^2.5.2",
+    "use-sound": "^5.0.0",
+    "viem": "^2.26.2",
+    "wagmi": "^2.14.16"
+  }
+}

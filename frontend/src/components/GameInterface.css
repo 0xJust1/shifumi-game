@@ -1,0 +1,214 @@
+.game-interface {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: 'Arial', sans-serif;
+}
+
+h1 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 30px;
+}
+
+.error-message {
+  background-color: #ffebee;
+  color: #c62828;
+  padding: 10px 15px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  border-left: 4px solid #c62828;
+}
+
+.connect-wallet {
+  text-align: center;
+  padding: 30px;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.connect-wallet button {
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  font-size: 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.connect-wallet button:hover {
+  background-color: #388e3c;
+}
+
+.game-container {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  padding: 20px;
+}
+
+.wallet-info {
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  margin-bottom: 20px;
+}
+
+.player-stats {
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+.pending-reward {
+  margin-top: 15px;
+  padding: 10px;
+  background-color: #fff8e1;
+  border-radius: 4px;
+  border-left: 4px solid #ffc107;
+}
+
+.pending-reward p {
+  color: #ff6f00;
+  font-weight: bold;
+}
+
+.pending-reward button {
+  background-color: #ff9800;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.pending-reward button:hover {
+  background-color: #f57c00;
+}
+
+.pending-reward button:disabled {
+  background-color: #bdbdbd;
+  cursor: not-allowed;
+}
+
+.game-controls {
+  margin-bottom: 30px;
+}
+
+.tier-selection, .move-selection {
+  margin-bottom: 20px;
+}
+
+.tier-options, .move-options {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.tier-options button, .move-options button {
+  flex: 1;
+  min-width: 80px;
+  padding: 12px;
+  background-color: #e0e0e0;
+  border: 2px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 15px;
+  transition: all 0.3s;
+}
+
+.tier-options button:hover, .move-options button:hover {
+  background-color: #d5d5d5;
+}
+
+.tier-options button.selected, .move-options button.selected {
+  background-color: #bbdefb;
+  border-color: #2196f3;
+  color: #0d47a1;
+}
+
+.move-options button {
+  font-size: 18px;
+  padding: 15px 10px;
+}
+
+.play-button {
+  display: block;
+  width: 100%;
+  padding: 15px;
+  background-color: #2196f3;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 18px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.play-button:hover {
+  background-color: #1976d2;
+}
+
+.play-button:disabled {
+  background-color: #bdbdbd;
+  cursor: not-allowed;
+}
+
+.game-result {
+  margin-top: 30px;
+  padding: 20px;
+  border-radius: 8px;
+  background-color: #f5f5f5;
+  text-align: center;
+}
+
+.moves-display {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  margin: 20px 0;
+}
+
+.move {
+  font-size: 24px;
+  font-weight: bold;
+  padding: 15px;
+  background-color: #e3f2fd;
+  border-radius: 50%;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 10px auto;
+}
+
+.vs {
+  font-size: 20px;
+  font-weight: bold;
+  color: #616161;
+}
+
+.win-message {
+  color: #4caf50;
+  font-weight: bold;
+  font-size: 18px;
+}
+
+@media (max-width: 600px) {
+  .tier-options, .move-options {
+    flex-direction: column;
+  }
+  
+  .moves-display {
+    flex-direction: column;
+  }
+  
+  .vs {
+    margin: 15px 0;
+  }
+} 

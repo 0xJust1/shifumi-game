@@ -1,0 +1,218 @@
+/* Game Styles */
+.game-container {
+  @apply relative overflow-hidden rounded-xl bg-gradient-to-br from-purple-900/50 to-indigo-900/50 backdrop-blur-lg;
+  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+}
+
+.game-move-button {
+  @apply relative overflow-hidden rounded-lg p-6 transition-all duration-300;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.game-move-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.game-move-button:active {
+  transform: translateY(1px);
+}
+
+.game-move-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  transition: 0.5s;
+}
+
+.game-move-button:hover::before {
+  left: 100%;
+}
+
+/* Level Progress Bar */
+.xp-bar {
+  @apply relative h-2.5 w-full rounded-full bg-gray-700/50 overflow-hidden;
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.3);
+}
+
+.xp-progress {
+  @apply absolute h-full bg-gradient-to-r from-purple-500 via-blue-500 to-indigo-500;
+  transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: 0 0 8px rgba(139, 92, 246, 0.5);
+}
+
+.level-info {
+  @apply bg-black/30 backdrop-blur-sm p-3 rounded-lg border border-white/10;
+  animation: pulseBorder 3s infinite alternate;
+}
+
+@keyframes pulseBorder {
+  0% { border-color: rgba(255, 255, 255, 0.05); }
+  100% { border-color: rgba(139, 92, 246, 0.3); }
+}
+
+.level-info h3 {
+  @apply text-lg font-semibold text-purple-400 mb-1;
+}
+
+.level-info p {
+  @apply text-xs text-gray-400 mt-1 text-right;
+}
+
+/* Achievements */
+.achievements-grid {
+  @apply grid grid-cols-1 md:grid-cols-3 gap-4 mt-6;
+}
+
+.achievement {
+  @apply relative p-4 rounded-lg text-center transition-all duration-300;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(4px);
+}
+
+.achievement.unlocked {
+  @apply bg-gradient-to-br from-purple-600/20 to-blue-600/20;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.achievement.locked {
+  @apply opacity-50 grayscale;
+}
+
+.achievement-icon {
+  @apply text-3xl mb-2 block;
+}
+
+/* Battle Animation */
+.battle-sequence {
+  @apply flex items-center justify-center gap-8 my-8;
+}
+
+.player-move, .computer-move {
+  @apply text-6xl transform transition-all duration-500;
+}
+
+.player-move.win {
+  @apply scale-125 text-green-400;
+  filter: drop-shadow(0 0 10px rgba(74, 222, 128, 0.5));
+}
+
+.computer-move.lose {
+  @apply scale-75 text-red-400;
+  filter: drop-shadow(0 0 10px rgba(248, 113, 113, 0.5));
+}
+
+/* Result Display */
+.result-display {
+  @apply text-center py-6;
+}
+
+.result-win {
+  @apply text-4xl font-bold text-green-400;
+  text-shadow: 0 0 10px rgba(74, 222, 128, 0.5);
+}
+
+.result-lose {
+  @apply text-4xl font-bold text-red-400;
+  text-shadow: 0 0 10px rgba(248, 113, 113, 0.5);
+}
+
+.result-draw {
+  @apply text-4xl font-bold text-yellow-400;
+  text-shadow: 0 0 10px rgba(250, 204, 21, 0.5);
+}
+
+/* Win Animation */
+.win-animation {
+  animation: winPulse 2s ease-in-out;
+  position: relative;
+}
+
+@keyframes winPulse {
+  0% { transform: scale(0.8); opacity: 0; }
+  20% { transform: scale(1.1); opacity: 1; }
+  40% { transform: scale(0.95); }
+  60% { transform: scale(1.05); }
+  80% { transform: scale(0.98); }
+  100% { transform: scale(1); }
+}
+
+/* Confetti Animation for Win */
+.confetti-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1000;
+}
+
+.confetti {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background-color: #FFC107;
+  opacity: 0.8;
+  animation: confettiFall 5s ease-in-out forwards;
+}
+
+@keyframes confettiFall {
+  0% { transform: translateY(-5vh) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+
+/* Lose Animation */
+.lose-animation {
+  animation: loseShake 0.8s ease-in-out;
+}
+
+@keyframes loseShake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+  20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+/* Draw Animation */
+.draw-animation {
+  animation: drawPulse 1.5s ease-in-out;
+}
+
+@keyframes drawPulse {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.7); }
+  70% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(250, 204, 21, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(250, 204, 21, 0); }
+}
+
+/* Floating Particles */
+.particles {
+  @apply absolute inset-0 pointer-events-none;
+}
+
+.particle {
+  @apply absolute rounded-full;
+  background: rgba(255, 255, 255, 0.3);
+  animation: float 20s infinite linear;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0) rotate(0deg);
+  }
+  100% {
+    transform: translateY(-100vh) rotate(360deg);
+  }
+} 
