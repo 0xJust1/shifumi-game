@@ -29,6 +29,22 @@ ChartJS.register(
   ArcElement
 );
 
+// Add global error handler for fetch requests that might be blocked by ad blockers
+const originalFetch = window.fetch;
+window.fetch = async function(input, init) {
+  try {
+    const response = await originalFetch(input, init);
+    return response;
+  } catch (error) {
+    console.error('Fetch error possibly caused by ad blocker:', error);
+    // If this is a network error, it might be caused by an ad blocker
+    if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+      console.warn('Network error detected, might be caused by an ad blocker');
+    }
+    throw error;
+  }
+};
+
 interface GameResult {
   timestamp: number;
   wins: number;
@@ -232,37 +248,50 @@ export default function GameStats() {
       setApiError(false);
       console.log('Fetching stats with params:', { timeframe, chainId });
       
-      const response = await fetch(`${API_URL}/game-stats/stats`);
-      if (!response.ok) throw new Error('Failed to fetch game stats');
-      const data = await response.json();
-      
-      console.log('Received game stats from backend:', data);
+      // First try to use Supabase directly to avoid ad blocker issues
+      try {
+        await fetchGameStatsFromSupabase();
+        return;
+      } catch (supabaseError) {
+        console.warn('Failed to fetch from Supabase directly, trying fallback API:', supabaseError);
+      }
 
-      // Process the data to ensure all values are present
-      const processedStats: GameStats = {
-        totalGames: data.totalGames || 0,
-        totalPlayers: data.totalPlayers || 0,
-        totalWins: data.totalWins || 0,
-        totalDraws: data.totalDraws || 0,
-        totalLosses: data.totalLosses || 0,
-        winRate: data.winRate || 0,
-        fairnessScore: data.fairnessScore || 0,
-        total_winnings: data.totalWinnings || '0',
-        gross_winnings: data.grossWinnings || '0',
-        net_winnings: data.netWinnings || '0',
-        results: data.results || []
-      };
+      // Only as a fallback, try the external API (which might be blocked by ad blockers)
+      try {
+        const response = await fetch(`${API_URL}/game-stats/stats`);
+        if (!response.ok) throw new Error('Failed to fetch game stats');
+        const data = await response.json();
+        
+        console.log('Received game stats from backend:', data);
 
-      console.log('Processed game stats:', processedStats);
-      setStats(processedStats);
-      setLastUpdated(new Date());
+        // Process the data to ensure all values are present
+        const processedStats: GameStats = {
+          totalGames: data.totalGames || 0,
+          totalPlayers: data.totalPlayers || 0,
+          totalWins: data.totalWins || 0,
+          totalDraws: data.totalDraws || 0,
+          totalLosses: data.totalLosses || 0,
+          winRate: data.winRate || 0,
+          fairnessScore: data.fairnessScore || 0,
+          total_winnings: data.totalWinnings || '0',
+          gross_winnings: data.grossWinnings || '0',
+          net_winnings: data.netWinnings || '0',
+          results: data.results || []
+        };
+
+        console.log('Processed game stats:', processedStats);
+        setStats(processedStats);
+        setLastUpdated(new Date());
+      } catch (apiError) {
+        console.error('Error fetching game stats from API:', apiError);
+        toast.error('Backend API unavailable, using database data instead');
+        
+        // Fallback to Supabase data again just in case
+        await fetchGameStatsFromSupabase();
+      }
     } catch (error) {
-      console.error('Error fetching game stats:', error);
+      console.error('Error in fetchGameStats:', error);
       setApiError(true);
-      toast.error('Backend API unavailable, using database data instead');
-      
-      // Fallback to Supabase data
-      await fetchGameStatsFromSupabase();
     } finally {
       setIsLoading(false);
     }

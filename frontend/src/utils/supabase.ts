@@ -10,13 +10,19 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    persistSession: false
+    persistSession: false,
+    autoRefreshToken: true,
+    detectSessionInUrl: false
   },
   global: {
     headers: {
       'Content-Type': 'application/json',
       'Accept': 'application/json'
     }
+  },
+  // Use schema option to avoid conflicts with ad blockers
+  db: {
+    schema: 'public'
   }
 });
 
