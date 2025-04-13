@@ -700,7 +700,7 @@ export default function GameBoard() {
     try {
       const resultType = result.toLowerCase();
       
-      // Calculate updated streak
+      // Calculate updated streak - only used in local UI, not stored in DB
       const newStreak = resultType === 'win' 
         ? playerStats.currentStreak + 1 
         : resultType === 'lose' ? 0 : playerStats.currentStreak;
@@ -742,36 +742,22 @@ export default function GameBoard() {
         );
       }
       
-      // Update game result in database
-      await updateGameResult(
+      // Update game result in database using the existing function (safe)
+      const moveString = playerMove !== undefined ? ['rock', 'paper', 'scissors'][playerMove] : undefined;
+      const aiMoveString = computerMove !== undefined ? ['rock', 'paper', 'scissors'][computerMove] : undefined;
+      
+      const updateSuccess = await updateGameResult(
         address,
         resultType as 'win' | 'lose' | 'draw',
         netWin.toString(),
-        playerMove !== undefined ? playerMove.toString() : undefined,
-        computerMove !== undefined ? computerMove.toString() : undefined
+        moveString,
+        aiMoveString
       );
       
-      // Save player stats to Supabase
-      const { error } = await supabase
-        .from('player_stats')
-        .upsert({
-          address,
-          level: newLevel,
-          xp: newXP,
-          wins: playerStats.wins + (resultType === 'win' ? 1 : 0),
-          losses: playerStats.totalGames - playerStats.wins + (resultType === 'lose' ? 1 : 0),
-          draws: playerStats.totalGames - playerStats.wins - (playerStats.totalGames - playerStats.wins) + (resultType === 'draw' ? 1 : 0),
-          total_games: playerStats.totalGames + 1,
-          current_streak: newStreak,
-          max_streak: maxStreak,
-          multiplier: multiplier,
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'address' });
-      
-      if (error) {
-        console.error('Error saving player stats to Supabase:', error);
+      if (updateSuccess) {
+        console.log('Successfully updated game results in database');
       } else {
-        console.log('Successfully saved player stats to Supabase');
+        console.warn('Failed to update game results in database');
       }
       
       // Check for achievements
